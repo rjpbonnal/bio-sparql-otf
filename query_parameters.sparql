@@ -1,0 +1,6 @@
+SELECT ?chr ?start ?end
+ WHERE { 
+ ?s <reference> [ <identifer> ?chr ]. 
+ ?s <location> [ <begin> [ <position> [ <filter_by> ?start ]]].
+ ?s <location> [ <end> [ <position> [ <filter_by> ?end ]]]. 
+  }

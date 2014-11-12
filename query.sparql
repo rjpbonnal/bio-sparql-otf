@@ -1,0 +1,8 @@
+select ?s where {
+?s <location> ?location .
+?s <reference> [ <identifer> "Y" ] .
+?location <begin> [ <position> ?begin ] .
+?location <end> [ <position> ?end ] .
+FILTER(?begin >= 2749180) .
+FILTER(?end <= 2755180) .
+}

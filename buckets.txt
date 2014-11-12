@@ -1,0 +1,19 @@
+q=<<-STR
+select ?s where {
+?s faldo:location ?location .
+?s faldo:reference [ dc:identifer "1" ] .
+?location faldo:begin [ position ?begin ] .
+?location faldo:end [ position ?end ] .
+FILTER(?begin >= 100) .
+FILTER(?end <= 200) .
+}
+STR
+
+select ?s 
+where {?s faldo:location ?location .
+?s faldo:reference [ dc:identifer \"1\" ] .
+?location faldo:begin [ position ?begin ] .
+?location faldo:end [ position ?end ] .
+?begin value_get 100 .
+?end value_let 200 .
+}
