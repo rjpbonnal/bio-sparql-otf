@@ -1,6 +1,7 @@
 require 'java'
 require 'lib/jar/htsjdk-1.119.jar' #http://sourceforge.net/projects/picard/files/latest/download?source=files
 require 'lib/jar/bzip2.jar' #wget http://www.kohsuke.org/bzip2/bzip2.jar
+require 'lib/jar/jdbm-2.4.jar' #https://jdbm2.googlecode.com/files/jdbm-2.4.jar
 require 'digest'
 require 'yaml'
 
