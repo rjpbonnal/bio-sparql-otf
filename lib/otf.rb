@@ -28,8 +28,8 @@ module OTF
         else 
           varID = @vcf.getID
           varURI = "#{varBaseURI}/#{varID}"
-          vcf_rdf << [varURI,"dc:identifier",@vcf.getID]
-          vcf_rdf << [varURI,"rdfs:label",@vcf.getID]
+          vcf_rdf << [RDF::URI.new(varURI),"dc:identifier",@vcf.getID]
+          vcf_rdf << [RDF::URI.new(varURI),"rdfs:label",@vcf.getID]
       end
       vcf_rdf << [RDF::URI.new(refBaseURI),"dc:identifier","#{@vcf.getChr}"]
       faldoRegion = RDF::URI.new(refBaseURI+":#{@vcf.getStart}-#{@vcf.getEnd}:1")
@@ -53,7 +53,7 @@ module OTF
       vcf_rdf << [refAlleleURI,"a",RDF::URI.new(varURI+":reference_allele")] 
       altAllele = @vcf.getAlternateAlleles.first.getBaseString
       altAlleleURI = RDF::URI.new(varURI+"\##{altAllele}")
-      vcf_rdf << [varURI,RDF::URI.new(varURI+":has_allele"),altAlleleURI]
+      vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varURI+":has_allele"),altAlleleURI]
       vcf_rdf << [altAlleleURI,"rdfs:label","#{varID} allele #{altAllele}"] 
       vcf_rdf << [altAlleleURI,"a",RDF::URI.new(varURI+":ancestral_allele")]
     end #to_rdf
