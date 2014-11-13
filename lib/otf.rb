@@ -14,13 +14,20 @@ module OTF
         @vcf = vcf
         @config = config
     end
-
     def to_rdf
       refBaseURI = "http://rdf.ebi.ac.uk/resource/ensembl/#{@config['ensemblVersion']}/chromosome:#{@config['assemblyVersion']}:#{@vcf.getChr}"
       varBaseURI = "http://rdf.ebi.ac.uk/terms/ensemblvariation"
       vcf_rdf = []
       varURI = nil
       varID = nil
+      
+      prefix = {
+        "faldo" => "http://biohackathon.org/resource/faldo#",
+        "rdfs" => "http://www.w3.org/2000/01/rdf-schema#",
+        "rdf" => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "dc" => "http://purl.org/dc/terms/" 
+      }
+
       case @vcf.getID
         when "." 
           varID = Digest::MD5.hexdigest("#{@config["species"]}:#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}")
@@ -28,34 +35,34 @@ module OTF
         else 
           varID = @vcf.getID
           varURI = "#{varBaseURI}/#{varID}"
-          vcf_rdf << [RDF::URI.new(varURI),"dc:identifier",@vcf.getID]
-          vcf_rdf << [RDF::URI.new(varURI),"rdfs:label",@vcf.getID]
+          vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(prefix["dc"]+"identifier"),@vcf.getID]
+          vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(prefix["rdfs"]+"label"),@vcf.getID]
       end
-      vcf_rdf << [RDF::URI.new(refBaseURI),"dc:identifier","#{@vcf.getChr}"]
+      vcf_rdf << [RDF::URI.new(refBaseURI),RDF::URI.new(prefix["dc"]+"identifier"),"#{@vcf.getChr}"]
       faldoRegion = RDF::URI.new(refBaseURI+":#{@vcf.getStart}-#{@vcf.getEnd}:1")
-      vcf_rdf << [RDF::URI.new(varURI),"faldo:location",faldoRegion]
-      vcf_rdf << [faldoRegion,"rdfs:label","#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}:1"]
-      vcf_rdf << [faldoRegion,"rdf:type","faldo:Region"]
-      vcf_rdf << [faldoRegion,"faldo:begin",RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")]
-      vcf_rdf << [faldoRegion,"faldo:end",RDF::URI.new(refBaseURI+":#{@vcf.getEnd}:1")]
-      vcf_rdf << [faldoRegion,"faldo:reference",refBaseURI]
+      vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(prefix["faldo"]+"location"),faldoRegion]
+      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["rdfs"]+"label"),"#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}:1"]
+      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["rdf"]+"type"),RDF::URI.new(prefix["faldo"]+"Region")]
+      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["faldo"]+"begin"),RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")]
+      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["faldo"]+"end"),RDF::URI.new(refBaseURI+":#{@vcf.getEnd}:1")]
+      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["faldo"]+"reference"),RDF::URI.new(refBaseURI)]
       if @vcf.getStart == @vcf.getEnd
         faldoExactPosition = RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")
-        vcf_rdf << [faldoExactPosition,"rdf:type","faldo:ExactPosition"]
-        vcf_rdf << [faldoExactPosition,"rdf:type","faldo:ForwardStrandPosition"]
-        vcf_rdf << [faldoExactPosition,"faldo:position",@vcf.getStart]
-        vcf_rdf << [faldoExactPosition,"faldo:reference",refBaseURI]
+        vcf_rdf << [faldoExactPosition,RDF::URI.new(prefix["rdf"]+"type"),"faldo:ExactPosition"]
+        vcf_rdf << [faldoExactPosition,RDF::URI.new(prefix["rdf"]+"type"),"faldo:ForwardStrandPosition"]
+        vcf_rdf << [faldoExactPosition,RDF::URI.new(prefix["faldo"]+"position"),@vcf.getStart]
+        vcf_rdf << [faldoExactPosition,RDF::URI.new(prefix["faldo"]+"reference"),RDF::URI.new(refBaseURI)]
       end
       refAllele = @vcf.getReference.getBaseString
       refAlleleURI = RDF::URI.new(varURI+"\##{refAllele}")
       vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varURI+":has_allele"),refAlleleURI]
-      vcf_rdf << [refAlleleURI,"rdfs:label","#{varID} allele #{refAllele}"] 
-      vcf_rdf << [refAlleleURI,"a",RDF::URI.new(varURI+":reference_allele")] 
+      vcf_rdf << [refAlleleURI,RDF::URI.new(prefix["rdfs"]+"label"),"#{varID} allele #{refAllele}"] 
+      vcf_rdf << [refAlleleURI,RDF::URI.new(prefix["rdf"]+"type"),RDF::URI.new(varURI+":reference_allele")] 
       altAllele = @vcf.getAlternateAlleles.first.getBaseString
       altAlleleURI = RDF::URI.new(varURI+"\##{altAllele}")
       vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varURI+":has_allele"),altAlleleURI]
-      vcf_rdf << [altAlleleURI,"rdfs:label","#{varID} allele #{altAllele}"] 
-      vcf_rdf << [altAlleleURI,"a",RDF::URI.new(varURI+":ancestral_allele")]
+      vcf_rdf << [altAlleleURI,RDF::URI.new(prefix["rdfs"]+"label"),"#{varID} allele #{altAllele}"] 
+      vcf_rdf << [altAlleleURI,RDF::URI.new(prefix["rdf"]+"type"),RDF::URI.new(varURI+":ancestral_allele")]
     end #to_rdf
   end #VCF
 
@@ -86,13 +93,7 @@ module OTF
 
       pre_parse = RDF::Graph.new
 
-      puts "Original Query"
-      puts query
-
       query_normalized = normalize_filters(query)
-
-      puts "Normalized Query"
-      puts query_normalized
 
 # [83] pry(main)> q.operands[1].class
 # => SPARQL::Algebra::Operator::Project
