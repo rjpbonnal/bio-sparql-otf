@@ -22,7 +22,7 @@ require 'sparql/client'
 require 'lib/otf'
 
 #`ifconfig | grep -w -B5 'active'| grep -o "inet .* netmask" | cut -d" " -f2 | xargs`
-set :bind, '192.168.0.96'
+set :bind, '0.0.0.0'
 set :port, '8080'
 
 puts ARGV.inspect
@@ -41,7 +41,7 @@ This is the SPARQL end point for the Variant Calling Format on file #{@@file}.
 The system accepts queries from which is possible to extract parametes using an internal SPARQL query on the WHERE clause:
 #{@@vcf_parameters}
 
-Please enjoy/お楽しみください SPAQRL ^_^
+Please enjoy/お楽しみください SPARQL ^_^
 STR
 
 
