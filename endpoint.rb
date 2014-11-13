@@ -21,20 +21,27 @@ require 'rdf/ntriples'
 require 'sparql/client'
 require 'lib/otf'
 
+#`ifconfig | grep -w -B5 'active'| grep -o "inet .* netmask" | cut -d" " -f2 | xargs`
+set :bind, '192.168.0.96'
+set :port, '8080'
 
-
-@file = java.io.File.new(ARGV[0])
-@fileidx = java.io.File.new("#{ARGV[0]}.tbi")
-@vcf = VCFFileReader.new(@file, @fileidx, true)
-@vcf_parameters = File.open(ARGV[1]).read
-@config = YAML.load_file(ARGV[2])
+puts ARGV.inspect
+@@file = java.io.File.new(ARGV[0])
+@@fileidx = java.io.File.new("#{ARGV[0]}.tbi")
+@@vcf = VCFFileReader.new(@@file, @@fileidx, true)
+@@vcf_parameters = File.open(ARGV[1]).read
+@@config = YAML.load_file(ARGV[2])
 
 puts <<-STR
-This is the SPARQL end point for the Variant Calling Format on file #{@file}.
-The system accepts queries from which is possible to extract parametes using an internal SPARQL query on the WHERE clause:
-#{@vcf_parameters}
+Biohackathon 2014
 
-Please enjoy/O tanoshimi kudasai/お楽しみください SPAQRL ^_^
+       松島
+
+This is the SPARQL end point for the Variant Calling Format on file #{@@file}.
+The system accepts queries from which is possible to extract parametes using an internal SPARQL query on the WHERE clause:
+#{@@vcf_parameters}
+
+Please enjoy/お楽しみください SPAQRL ^_^
 STR
 
 
@@ -91,24 +98,33 @@ end
 post "/query" do
   if params["query"]
     query = params["query"].to_s.match(/^http:/) ? RDF::Util::File.open_file(params["query"]) : ::URI.decode(params["query"].to_s)
-    chr, start, final = OTF::Query.get_parameters(query, @vcf_parameters)
-    chr_val = chr.last.to_s
-    start_val = start.last.to_s
-    final_val = final.last.to_s
+
+puts query
+puts @@file.inspect
+puts @@vcf.inspect
+puts @@vcf_parameters.inspect
+puts @@config.inspect
+
+    chr, start, final = OTF::Query.get_parameters(query, @@vcf_parameters)
+    puts chr_val = chr.last.to_s
+    puts start_val = start.last.to_s
+    puts final_val = final.last.to_s
 
     repository = RDF::Graph.new
 
     if chr_val && start_val && final_val
-      @vcf.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
-        OTF::VCF.new(vc, @config).to_rdf.each do |vcf_statement|
-          repository << vcf_statement.flatten(1)
+      
+
+      @@vcf.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
+        OTF::VCF.new(vc, @@config).to_rdf.each do |vcf_statement|
           # puts vcf_statement.inspect
+            repository << vcf_statement
         end
       end
     end
 
 
-    SPARQL.execute(query, repository, options)
+    SPARQL.execute(query, repository)
   else
     settings.sparql_options.merge!(:prefixes => {
       :ssd => "http://www.w3.org/ns/sparql-service-description#",

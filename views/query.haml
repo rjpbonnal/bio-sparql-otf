@@ -1,7 +1,25 @@
 %html
+  %head
+    %link{href:"/css/bootstrap.css", type:"text/css", rel:"stylesheet"}
+    %link{href:"/css/bootstrap-theme.min.css", type:"text/css", rel:"stylesheet"}
   %body
-    %h1 Query RDF!
-    %form(method="post" enctype='multipart/form-data')   
-      %textarea(name='query')    
-      %br
-      %input(type='submit' value='Query!')
+    %div{class:"container-fluid"}
+      %div{class:"row"}
+        %div{class:"col-md-12"}
+          %h1 Biohackathon 2014 松島
+          %h2 RDF On The Fly / オンザフライ
+          %h3 Please enjoy/お楽しみください SPARQL ^_^
+          %img{src:"bh2014-islands.png"}
+      %div{class:"row"}
+        %div{class:"col-md-8"}
+          %form{role:"form", method:"post",enctype:'multipart/form-data'}
+            %textarea{class:"form-control input-sm", type:"text", placeholder:"C'mon, give me your SPARQL", name:'query', rows:10}
+            %br
+            %button{class:"btn btn-default", type:"submit", id:"submit"}
+              Button
+        %div{class:"col-md-4"}
+      %div{class:"row"}
+        %div{class:"col-md-12"}
+    %script{src:"/js/jquery-2.1.1.min.js"}
+    %script{src:"/js/bootstrap.min.js"}
+
