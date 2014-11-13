@@ -16,7 +16,7 @@ prefix protein: <http://rdf.ebi.ac.uk/resource/ensembl.protein/>
 
 select ?s where {
 ?s faldo:location ?location .
-?s faldo:reference [ dc:identifer "Y" ] .
+?location faldo:reference [ dc:identifier "Y" ] .
 ?location faldo:begin [ faldo:position ?begin ] .
 ?location faldo:end [ faldo:position ?end ] .
 FILTER(?begin >= 2749180) .
