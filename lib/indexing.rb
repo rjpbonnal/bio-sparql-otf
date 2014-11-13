@@ -1,16 +1,24 @@
+require 'lib/otf'
 
 module FsIndex
     class IBT #IndexByTabix
     require 'sequel'
-    require 'bio-bgzf'
+    # require 'bio-bgzf'
     require 'java'
     require 'lib/jar/htsjdk-1.119.jar' #http://sourceforge.net/projects/picard/files/latest/download?source=files
-    java_import 'htsjdk.tribble.readers.TabixReader'
+    require 'lib/jar/bzip2.jar'
+    java_import "htsjdk.variant.vcf.VCFFileReader"
+    java_import "htsjdk.variant.variantcontext.VariantContext"
+
     #specific for reading BgZip Files
-    def initialize(filename)
+    def initialize(filename, config)
       @filename = filename
       @db = Sequel.connect("jdbc:sqlite:#{@filename}.ibt")
-      @tabix = TabixReader.new @filename
+      @file = java.io.File.new(@filename)
+      @fileidx = java.io.File.new("#{@filename}.tbi")
+      @vcf = VCFFileReader.new(@file, @fileidx, true)
+      @config = config
+      # @tabix = TabixReader.new @filename
       begin
         @db.create_table :positions do
           String :rs #the name on which is possible to perform the query
@@ -22,6 +30,10 @@ module FsIndex
         puts "This is the original message: #{e.message}"
       end #files_index
     end #initialize
+
+    def db
+      @db
+    end
 
     def filename 
       @filename
@@ -50,16 +62,16 @@ STR
       # @h[tag.to_sym] << {block_vo: vo, iblock_vo: iblock_vo, tag: tag.to_sym, leftover: leftover}
       # @db.synchronous=:normal
       # @db.temp_store=:memory
+      end
+      @db = Sequel.connect("jdbc:sqlite:#{@filename}.ibt")
     end
-    @db = Sequel.connect("jdbc:sqlite:#{@filename}.ibt")
-  end
 
-    def search(rs)
-
-        @positions.where(tags: key).each do |record|
-          region = @tabix.parseReg("#{record.chr}:#{record.position}")
-          @tabix.query(region).each do |item|
-            # item 
+    def search(key)
+        vcs = []
+        @positions.where(rs: key).each do |record|
+          # region_str = "#{record[:chr]}:#{record[:position]}" #@tabix.parseReg()
+          @vcf.query(record[:chr], record[:position], record[:position]+1).each do |vc|
+            vcs << OTF::VCF.new(vc,@config)
           end
         end
     end #search

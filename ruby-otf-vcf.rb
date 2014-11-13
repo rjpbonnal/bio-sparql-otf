@@ -7,17 +7,17 @@ require 'rdf/ntriples'
 require 'sparql'
 require 'securerandom'
 
-require 'lib/indexing'
+# require 'lib/indexing'
 require 'lib/otf'
 
 
 file_name = ARGV[0]
 
-unless File.exists?("#{file_name}.fsidx")
-  print "Creting Index for text search..."
-  index = ::FsIndex::Index.new file_name
+# unless File.exists?("#{file_name}.fsidx")
+#   print "Creting Index for text search..."
+#   index = ::FsIndex::Index.new file_name
 
-end
+# end
 
 
 
@@ -49,8 +49,8 @@ repository = RDF::Graph.new
 
 if chr_val && start_val && final_val
   vcf.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
-    OTF::VCF.new(vc).to_rdf.each do |vcf_statement|
-      repository << vcf_statement.flatten(1)
+    OTF::VCF.new(vc, ARGV[3]).to_rdf.each do |vcf_statement|
+        repository << vcf_statement
       # puts vcf_statement.inspect
     end
   end
@@ -63,4 +63,4 @@ end
 # repository.graphs.enum_triple do |t|
 #   puts t
 # end
-puts SPARQL.execute(query, repository, options={}).inspect
+# puts SPARQL.execute(query, repository, options={}).inspect

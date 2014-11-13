@@ -55,7 +55,7 @@ module OTF
       altAlleleURI = RDF::URI.new(varURI+"\##{altAllele}")
       vcf_rdf << [varURI,RDF::URI.new(varURI+":has_allele"),altAlleleURI]
       vcf_rdf << [altAlleleURI,"rdfs:label","#{varID} allele #{altAllele}"] 
-      vcf_rdf << [altAlleleURI,"a",RDF::URI.new(varURI+":ancestral_allele")] 
+      vcf_rdf << [altAlleleURI,"a",RDF::URI.new(varURI+":ancestral_allele")]
     end #to_rdf
   end #VCF
 
@@ -81,7 +81,7 @@ module OTF
       end
     end
 
-    def where_graph(query)
+    def self.where_graph(query)
       vary_diz = Hash.new{|h,k| h[k] = SecureRandom.hex }
 
       pre_parse = RDF::Graph.new
@@ -94,7 +94,13 @@ module OTF
       puts "Normalized Query"
       puts query_normalized
 
-      SPARQL::Grammar.parse(query_normalized).operands[1].patterns.each do |pattern|
+# [83] pry(main)> q.operands[1].class
+# => SPARQL::Algebra::Operator::Project
+# [84] pry(main)> q.operands[1].operands[1].class
+# => SPARQL::Algebra::Operator::Filter
+# [85] pry(main)> q.operands[1].operands[1].operands[1].class
+# => RDF::Query
+      SPARQL::Grammar.parse(query_normalized).operands[1].operands[1].patterns.each do |pattern|
         if pattern.subject.variable?
           pattern.subject=RDF::URI(vary_diz[pattern.subject.to_s])
         end
@@ -107,7 +113,7 @@ module OTF
       pre_parse
     end #where_graph
 
-    def get_parameters(original_query, parameters_query)
+    def self.get_parameters(original_query, parameters_query)
       where_graph(original_query).query(SPARQL::Grammar.parse(parameters_query)).first.to_a
     end
 
