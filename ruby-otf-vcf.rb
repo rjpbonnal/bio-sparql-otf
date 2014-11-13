@@ -20,46 +20,46 @@ module OTF
         end
 
         def to_rdf
-					refBaseURI = "http://rdf.ebi.ac.uk/resource/ensembl/#{@config['ensemblVersion']}/chromosome:#{@config['assemblyVersion']}:#{@vcf.getChr}"
-					varBaseURI = "http://rdf.ebi.ac.uk/terms/ensemblvariation"
-					vcf_rdf = []
-					varURI = nil
-					varID = nil
-					case @vcf.getID
-						when "." 
-							varID = Digest::MD5.hexdigest("#{@config["species"]}:#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}")
-							varURI = "#{varBaseURI}/#{varID}"
-						else 
-							varID = @vcf.getID
-							varURI = "#{varBaseURI}/#{varID}"
-							vcf_rdf << [varURI,"dc:identifier",@vcf.getID]
-							vcf_rdf << [varURI,"rdfs:label",@vcf.getID]
-					end
-					vcf_rdf << [RDF::URI.new(refBaseURI),"dc:identifier","#{@vcf.getChr}"]
-					faldoRegion = RDF::URI.new(refBaseURI+":#{@vcf.getStart}-#{@vcf.getEnd}:1")
-					vcf_rdf << [RDF::URI.new(varURI),"faldo:location",faldoRegion]
-					vcf_rdf << [faldoRegion,"rdfs:label","#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}:1"]
-					vcf_rdf << [faldoRegion,"rdf:type","faldo:Region"]
-					vcf_rdf << [faldoRegion,"faldo:begin",RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")]
-					vcf_rdf << [faldoRegion,"faldo:end",RDF::URI.new(refBaseURI+":#{@vcf.getEnd}:1")]
-					vcf_rdf << [faldoRegion,"faldo:reference",refBaseURI]
-					if @vcf.getStart == @vcf.getEnd
-       			faldoExactPosition = RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")
-						vcf_rdf << [faldoExactPosition,"rdf:type","faldo:ExactPosition"]
-						vcf_rdf << [faldoExactPosition,"rdf:type","faldo:ForwardStrandPosition"]
-						vcf_rdf << [faldoExactPosition,"faldo:position",@vcf.getStart]
-						vcf_rdf << [faldoExactPosition,"faldo:reference",refBaseURI]
-       		end
-					refAllele = @vcf.getReference.getBaseString
-					refAlleleURI = RDF::URI.new(varURI+"\##{refAllele}")
-					vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varURI+":has_allele"),refAlleleURI]
-					vcf_rdf << [refAlleleURI,"rdfs:label","#{varID} allele #{refAllele}"] 
-					vcf_rdf << [refAlleleURI,"a",RDF::URI.new(varURI+":reference_allele")] 
-					altAllele = @vcf.getAlternateAlleles.first.getBaseString
-					altAlleleURI = RDF::URI.new(varURI+"\##{altAllele}")
-					vcf_rdf << [varURI,RDF::URI.new(varURI+":has_allele"),altAlleleURI]
-					vcf_rdf << [altAlleleURI,"rdfs:label","#{varID} allele #{altAllele}"] 
-					vcf_rdf << [altAlleleURI,"a",RDF::URI.new(varURI+":ancestral_allele")] 
+            refBaseURI = "http://rdf.ebi.ac.uk/resource/ensembl/#{@config['ensemblVersion']}/chromosome:#{@config['assemblyVersion']}:#{@vcf.getChr}"
+            varBaseURI = "http://rdf.ebi.ac.uk/terms/ensemblvariation"
+            vcf_rdf = []
+            varURI = nil
+            varID = nil
+            case @vcf.getID
+              when "." 
+                varID = Digest::MD5.hexdigest("#{@config["species"]}:#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}")
+                varURI = "#{varBaseURI}/#{varID}"
+              else 
+                varID = @vcf.getID
+                varURI = "#{varBaseURI}/#{varID}"
+                vcf_rdf << [varURI,"dc:identifier",@vcf.getID]
+                vcf_rdf << [varURI,"rdfs:label",@vcf.getID]
+            end
+            vcf_rdf << [RDF::URI.new(refBaseURI),"dc:identifier","#{@vcf.getChr}"]
+            faldoRegion = RDF::URI.new(refBaseURI+":#{@vcf.getStart}-#{@vcf.getEnd}:1")
+            vcf_rdf << [RDF::URI.new(varURI),"faldo:location",faldoRegion]
+            vcf_rdf << [faldoRegion,"rdfs:label","#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}:1"]
+            vcf_rdf << [faldoRegion,"rdf:type","faldo:Region"]
+            vcf_rdf << [faldoRegion,"faldo:begin",RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")]
+            vcf_rdf << [faldoRegion,"faldo:end",RDF::URI.new(refBaseURI+":#{@vcf.getEnd}:1")]
+            vcf_rdf << [faldoRegion,"faldo:reference",refBaseURI]
+            if @vcf.getStart == @vcf.getEnd
+              faldoExactPosition = RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")
+              vcf_rdf << [faldoExactPosition,"rdf:type","faldo:ExactPosition"]
+              vcf_rdf << [faldoExactPosition,"rdf:type","faldo:ForwardStrandPosition"]
+              vcf_rdf << [faldoExactPosition,"faldo:position",@vcf.getStart]
+              vcf_rdf << [faldoExactPosition,"faldo:reference",refBaseURI]
+            end
+            refAllele = @vcf.getReference.getBaseString
+            refAlleleURI = RDF::URI.new(varURI+"\##{refAllele}")
+            vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varURI+":has_allele"),refAlleleURI]
+            vcf_rdf << [refAlleleURI,"rdfs:label","#{varID} allele #{refAllele}"] 
+            vcf_rdf << [refAlleleURI,"a",RDF::URI.new(varURI+":reference_allele")] 
+            altAllele = @vcf.getAlternateAlleles.first.getBaseString
+            altAlleleURI = RDF::URI.new(varURI+"\##{altAllele}")
+            vcf_rdf << [varURI,RDF::URI.new(varURI+":has_allele"),altAlleleURI]
+            vcf_rdf << [altAlleleURI,"rdfs:label","#{varID} allele #{altAllele}"] 
+            vcf_rdf << [altAlleleURI,"a",RDF::URI.new(varURI+":ancestral_allele")] 
 				end
     end
 
