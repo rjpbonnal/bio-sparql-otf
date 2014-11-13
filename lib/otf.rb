@@ -64,6 +64,13 @@ module OTF
       vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varURI+":has_allele"),altAlleleURI]
       vcf_rdf << [altAlleleURI,RDF::URI.new(prefix["rdfs"]+"label"),"#{varID} allele #{altAllele}"] 
       vcf_rdf << [altAlleleURI,RDF::URI.new(prefix["rdf"]+"type"),RDF::URI.new(varURI+":ancestral_allele")]
+
+      vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varBaseURI+"/vcf/quality"),@vcf.getPhredScaledQual]
+      @vcf.getAttributes.each_key do |attr|
+        vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varBaseURI+"/vcf/attribute\##{attr}"),@vcf.getAttribute(attr)]
+      end
+      
+      vcf_rdf
     end #to_rdf
   end #VCF
 
