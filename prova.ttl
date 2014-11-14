@@ -1,7 +1,0 @@
-<s> <location> <_location> .
-<s> <reference> <0> .
-<0> <identifer> "Y" .
-<9> <begin> <1> .
-<1> <position> <start> .
-<location> <end> <2> .
-<2> <position> <final> .

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="lib/bootstrap/css/bootstrap.css"/>
+    <script src="lib/d3/d3.v3.min.js"></script>
+    <script src="js/d3sparql.js"></script>
+    <script>
+    function exec() {
+      var endpoint = d3.select("#endpoint").property("value")
+      var sparql = d3.select("#sparql").property("value")
+      d3sparql.query(endpoint, sparql, render)
+    }
+    function render(json) {
+      console.log(json)
+      var config = {
+        "label_x": "genome size (bp) -- circle size corresponds to # of histidine kinase domains",
+        "label_y": "# of genes",
+        "var_x": "length",
+        "var_y": "genes",
+        "var_r": "hks",
+        "min_r": 1,
+        "max_r": 20,
+        "width": 850,
+        "height": 300,
+        "margin_x": 80,
+        "margin_y": 40,
+      }
+      d3sparql.scatterplot(json, config)
+      d3sparql.htmltable(json)
+    }
+
+    function exec_offline() {
+      d3.json("cache/interpro/1117-hk.json", render)
+    }
+    function toggle() {
+      d3sparql.toggle()
+    }
+    </script>
+  </head>
+  <body>
+    <div id="query" style="margin: 10px">
+      <h1>d3scatterplot</h1>
+      <form class="form-inline">
+        <label>SPARQL endpoint:</label>
+        <div class="input-append">
+          <input id="endpoint" class="span5" value="http://togostanza.org/sparql" type="text">
+          <button class="btn" type="button" onclick="exec()">Query</button>
+          <button class="btn" type="button" onclick="exec_offline()">Use cache</button>
+          <button class="btn" type="button" onclick="toggle()"><i id="button" class="icon-chevron-up"></i></button>
+        </div>
+      </form>
+      <textarea id="sparql" class="span9" rows=15>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix up: <http://purl.uniprot.org/core/>
+prefix obo: <http://purl.obolibrary.org/obo/>
+prefix tax: <http://purl.uniprot.org/taxonomy/>
+prefix insdc: <http://ddbj.nig.ac.jp/ontologies/sequence#>
+
+select distinct ?length ?genes ?hks ?taxid ?label
+where {
+  # Cyanobacteria (1117)
+  ?taxid rdfs:subClassOf+ <http://identifiers.org/taxonomy/1117> .
+  ?taxid rdf:type <http://identifiers.org/taxonomy/> .
+  ?s rdfs:seeAlso ?taxid .
+  ?s rdfs:label ?label .
+  ?s rdf:type obo:SO_0000340 . # chromosome
+  ?s insdc:sequence_length ?length .
+  {
+    select ?s (count(?gene) as ?genes)
+    where {
+      ?gene obo:so_part_of ?s .
+      ?gene rdf:type obo:SO_0000704 . # gene
+    }
+    group by ?s
+  }
+  {
+    select ?s (count(?cds) as ?hks)
+    where {
+      # Signal transduction histidine kinase (IPR005467)
+      ?cds rdfs:seeAlso <http://identifiers.org/interpro/IPR005467> .
+      ?cds obo:so_part_of+ ?s .
+    }
+    group by ?s
+  }
+} order by desc(?genes) limit 100
+      </textarea>
+    </div>
+  </body>
+</html>
