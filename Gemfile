@@ -7,4 +7,7 @@ gem 'haml'
 gem 'bio-bgzf'
 gem 'sequel'
 gem 'jdbc-sqlite3'
+gem 'tilt', '>= 1.3.4', '~> 1.3'
+gem 'json'
+gem "sinatra-cross_origin", "~> 0.3.1"
 #require 'multi_json'
