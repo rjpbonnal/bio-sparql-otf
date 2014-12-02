@@ -7,6 +7,7 @@ module FsIndex
     require 'java'
     require 'lib/jar/htsjdk-1.119.jar' #http://sourceforge.net/projects/picard/files/latest/download?source=files
     require 'lib/jar/bzip2.jar'
+    require 'lib/jar/jdbm-2.4.jar' #https://jdbm2.googlecode.com/files/jdbm-2.4.jar
     java_import "htsjdk.variant.vcf.VCFFileReader"
     java_import "htsjdk.variant.variantcontext.VariantContext"
 
@@ -68,9 +69,13 @@ STR
 
     def search(key)
         vcs = []
-        @positions.where(rs: key).each do |record|
+        records = @positions.where(rs: key).all
+# puts records.length
+        records.each do |record|
+          # puts records
           # region_str = "#{record[:chr]}:#{record[:position]}" #@tabix.parseReg()
           @vcf.query(record[:chr], record[:position], record[:position]+1).each do |vc|
+          #   puts vc.inspect
             vcs << OTF::VCF.new(vc,@config)
           end
         end

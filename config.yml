@@ -2,3 +2,7 @@ species: human
 taxonid: 9606
 assemblyVersion: GRCh38
 ensemblVersion: 77
+files: 
+  - example.vcf.gz
+  - Homo_sapiens.vcf.gz
+query_config: query_parameters.sparql

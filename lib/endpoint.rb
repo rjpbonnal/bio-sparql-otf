@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 #encoding: utf-8
 
 # Sinatra example
@@ -7,45 +6,67 @@
 # where `uri` is the URI of a SPARQL query, or
 # a URI-escaped SPARQL query, for example:
 #   http://localhost:4567/?query=SELECT%20?s%20?p%20?o%20WHERE%20%7B?s%20?p%20?o%7D
+
+#Example running.
+#$ jruby endpoint.rb example.vcf.gz,Homo_sapiens.vcf.gz query_parameters.sparql config.yml
 require 'rubygems'
 require 'rdf'
-require 'sinatra'
+require 'sinatra/base'
 require 'sinatra/sparql'
 require 'uri'
 require 'haml'
 require 'benchmark'
+  # require 'sinatra'
+require 'json'
+require 'rdf/ntriples'
+# require 'sparql/client'
+require 'lib/otf'
+require 'sinatra/cross_origin'
+
+module OTF
+
 
 # require 'multi_json'
 # require 'faraday'
 # require 'elasticsearch'
-require 'json'
-require 'rdf/ntriples'
-require 'sparql/client'
-require 'lib/otf'
-require 'sinatra/cross_origin'
 
-configure do
-  enable :cross_origin
+class Endpoint < Sinatra::Base
+
+# configure do
+  # enable :cross_origin
+# # #`ifconfig | grep -w -B5 'active'| grep -o "inet .* netmask" | cut -d" " -f2 | xargs`
+#   set :bind, '0.0.0.0'
+  # set :port, '8080'
+  # set :static, true
+# end
+
+
+# puts ARGV.inspect
+@@pool = OTF::FilePool.new
+
+# ARGV[0].split(',').each do |file|
+#   @@pool.add file
+# end
+
+
+if !File.exists? "config.yml"
+  exit
 end
 
-#`ifconfig | grep -w -B5 'active'| grep -o "inet .* netmask" | cut -d" " -f2 | xargs`
-set :bind, '0.0.0.0'
-set :port, '8080'
-set :static, true
+@@config = YAML.load_file("config.yml")
 
-puts ARGV.inspect
-@@file = java.io.File.new(ARGV[0])
-@@fileidx = java.io.File.new("#{ARGV[0]}.tbi")
-@@vcf = VCFFileReader.new(@@file, @@fileidx, true)
-@@vcf_parameters = File.open(ARGV[1]).read
-@@config = YAML.load_file(ARGV[2])
+@@config["files"].each do |file|
+  @@pool.add file
+end
+
+@@vcf_parameters = File.open(@@config["query_config"]).read
 
 puts <<-STR
 Biohackathon 2014
 
        松島
 
-This is the SPARQL end point for the Variant Calling Format on file #{@@file}.
+This is the SPARQL end point for the Variant Calling Format on file #{@@pool.files.map{|file| file[:name]}.join(',')}.
 The system accepts queries from which is possible to extract parametes using an internal SPARQL query on the WHERE clause:
 #{@@vcf_parameters}
 
@@ -64,12 +85,8 @@ get "/sparql" do
   if params["query"]
     query = params["query"].to_s.match(/^http:/) ? RDF::Util::File.open_file(params["query"]) : ::URI.decode(params["query"].to_s)
 
-# puts query
-# puts @@file.inspect
-# puts @@vcf.inspect
-# puts @@vcf_parameters.inspect
-# puts @@config.inspect
 
+    query = OTF::Query.normalize_prefixes(query)
     chr, start, final = OTF::Query.get_parameters(query, @@vcf_parameters)
     chr_val = chr.last.to_s
     start_val = start.last.to_s
@@ -80,16 +97,20 @@ get "/sparql" do
     if chr_val && start_val && final_val
       
 
-      @@vcf.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
-        OTF::VCF.new(vc, @@config).to_rdf.each do |vcf_statement|
-          # puts vcf_statement.inspect
+      @@pool.readers.each do |vcf_reader|
+        vcf_reader.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
+          OTF::VCF.new(vc, @@config).to_rdf.each do |vcf_statement|
             repository << vcf_statement
+          end
         end
       end
+
     end
-    cross_origin
-    content_type :json
-    SPARQL.execute(query, repository).to_json
+    # cross_origin
+    content_type 'application/sparql-results+json'
+    # content_type :html
+    solutions = SPARQL.execute(query, repository)
+    solutions.to_json
   else
     settings.sparql_options.merge!(:prefixes => {
       :ssd => "http://www.w3.org/ns/sparql-service-description#",
@@ -104,12 +125,6 @@ post "/query" do
   if params["query"]
     query = params["query"].to_s.match(/^http:/) ? RDF::Util::File.open_file(params["query"]) : ::URI.decode(params["query"].to_s)
 
-# puts query
-# puts @@file.inspect
-# puts @@vcf.inspect
-# puts @@vcf_parameters.inspect
-# puts @@config.inspect
-
     chr, start, final = OTF::Query.get_parameters(query, @@vcf_parameters)
     chr_val = chr.last.to_s
     start_val = start.last.to_s
@@ -120,12 +135,14 @@ post "/query" do
     if chr_val && start_val && final_val
       
 
-      @@vcf.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
-        OTF::VCF.new(vc, @@config).to_rdf.each do |vcf_statement|
-          # puts vcf_statement.inspect
+      @@pool.readers.each do |vcf_reader|
+        vcf_reader.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
+          OTF::VCF.new(vc, @@config).to_rdf.each do |vcf_statement|
             repository << vcf_statement
+          end
         end
       end
+
     end
 
 
@@ -147,3 +164,6 @@ get '/' do
   #   x.report("Creating a repository:") {repository = RDF::Repository.load("uploads/gwas-rdf/gwas.rdf")}
   # end
 end
+
+end #Endpoint
+end #OTF

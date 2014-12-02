@@ -351,7 +351,7 @@ d3sparql.barchart = function(json, config) {
   scale_x.domain(data.map(function(d) {return d[config.var_x].value}))
   scale_y.domain(d3.extent(data, function(d) {return parseInt(d[config.var_y].value)}))
 
-  var svg = d3.select("body")
+  var svg = d3.select("#chart")
     .append("svg")
     .attr("width", config.width)
     .attr("height", config.height)

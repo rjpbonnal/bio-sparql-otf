@@ -4,80 +4,71 @@ require 'lib/jar/bzip2.jar' #wget http://www.kohsuke.org/bzip2/bzip2.jar
 require 'lib/jar/jdbm-2.4.jar' #https://jdbm2.googlecode.com/files/jdbm-2.4.jar
 require 'digest'
 require 'yaml'
+require 'lib/otf/vcf'
 
 java_import "htsjdk.variant.vcf.VCFFileReader"
 java_import "htsjdk.variant.variantcontext.VariantContext"
 
 module OTF
-  class VCF
-
-    def initialize(vcf,config)
-        @vcf = vcf
-        @config = config
+  class FilePool
+    def initialize
+      @pool = []
     end
-    def to_rdf
-      refBaseURI = "http://rdf.ebi.ac.uk/resource/ensembl/#{@config['ensemblVersion']}/chromosome:#{@config['assemblyVersion']}:#{@vcf.getChr}"
-      varBaseURI = "http://rdf.ebi.ac.uk/terms/ensemblvariation"
-      vcf_rdf = []
-      varURI = nil
-      varID = nil
-      
-      prefix = {
-        "faldo" => "http://biohackathon.org/resource/faldo#",
-        "rdfs" => "http://www.w3.org/2000/01/rdf-schema#",
-        "rdf" => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        "dc" => "http://purl.org/dc/terms/" 
-      }
 
-      case @vcf.getID
-        when "." 
-          varID = Digest::MD5.hexdigest("#{@config["species"]}:#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}")
-          varURI = "#{varBaseURI}/#{varID}"
-        else 
-          varID = @vcf.getID
-          varURI = "#{varBaseURI}/#{varID}"
-          vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(prefix["dc"]+"identifier"),@vcf.getID]
-          vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(prefix["rdfs"]+"label"),@vcf.getID]
+    def add(file)
+      a = java.io.File.new(file)
+      b = java.io.File.new("#{file}.tbi")
+      @pool << {
+                name: file,
+                vcf:a,
+                idx:b,
+                reader:VCFFileReader.new(a, b, true)
+              }
+    end
+
+    def files
+      @pool
+    end
+
+    def readers
+      @pool.map do |drop|
+        drop[:reader]
       end
-      vcf_rdf << [RDF::URI.new(refBaseURI),RDF::URI.new(prefix["dc"]+"identifier"),"#{@vcf.getChr}"]
-      faldoRegion = RDF::URI.new(refBaseURI+":#{@vcf.getStart}-#{@vcf.getEnd}:1")
-      vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(prefix["faldo"]+"location"),faldoRegion]
-      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["rdfs"]+"label"),"#{@vcf.getChr}:#{@vcf.getStart}-#{@vcf.getEnd}:1"]
-      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["rdf"]+"type"),RDF::URI.new(prefix["faldo"]+"Region")]
-      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["faldo"]+"begin"),RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")]
-      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["faldo"]+"end"),RDF::URI.new(refBaseURI+":#{@vcf.getEnd}:1")]
-      vcf_rdf << [faldoRegion,RDF::URI.new(prefix["faldo"]+"reference"),RDF::URI.new(refBaseURI)]
-      if @vcf.getStart == @vcf.getEnd
-        faldoExactPosition = RDF::URI.new(refBaseURI+":#{@vcf.getStart}:1")
-        vcf_rdf << [faldoExactPosition,RDF::URI.new(prefix["rdf"]+"type"),"faldo:ExactPosition"]
-        vcf_rdf << [faldoExactPosition,RDF::URI.new(prefix["rdf"]+"type"),"faldo:ForwardStrandPosition"]
-        vcf_rdf << [faldoExactPosition,RDF::URI.new(prefix["faldo"]+"position"),@vcf.getStart]
-        vcf_rdf << [faldoExactPosition,RDF::URI.new(prefix["faldo"]+"reference"),RDF::URI.new(refBaseURI)]
-      end
-      refAllele = @vcf.getReference.getBaseString
-      refAlleleURI = RDF::URI.new(varURI+"\##{refAllele}")
-      vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varURI+":has_allele"),refAlleleURI]
-      vcf_rdf << [refAlleleURI,RDF::URI.new(prefix["rdfs"]+"label"),"#{varID} allele #{refAllele}"] 
-      vcf_rdf << [refAlleleURI,RDF::URI.new(prefix["rdf"]+"type"),RDF::URI.new(varURI+":reference_allele")] 
-      altAllele = @vcf.getAlternateAlleles.first.getBaseString
-      altAlleleURI = RDF::URI.new(varURI+"\##{altAllele}")
-      vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varURI+":has_allele"),altAlleleURI]
-      vcf_rdf << [altAlleleURI,RDF::URI.new(prefix["rdfs"]+"label"),"#{varID} allele #{altAllele}"] 
-      vcf_rdf << [altAlleleURI,RDF::URI.new(prefix["rdf"]+"type"),RDF::URI.new(varURI+":ancestral_allele")]
-      vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varBaseURI+"/vcf/quality"),RDF::Literal::Double.new(@vcf.getPhredScaledQual)]
-      @vcf.getAttributes.each_key do |attr|
-        vcf_rdf << [RDF::URI.new(varURI),RDF::URI.new(varBaseURI+"/vcf/attribute\##{attr}"),@vcf.getAttribute(attr)]
-      end
-      
-      vcf_rdf
-    end #to_rdf
-  end #VCF
+    end
+  end#FilePool
 
   module Query
 
+    def self.normalize_prefixes(query)
+      prefixes =<<-PREF
+prefix ensembl: <http://rdf.ebi.ac.uk/resource/ensembl/>
+prefix faldo: <http://biohackathon.org/resource/faldo#>
+prefix taxon: <http://identifiers.org/taxonomy/>
+prefix skos: <http://www.w3.org/2004/02/skos/core#>
+prefix ensemblvariation: <http://rdf.ebi.ac.uk/terms/ensemblvariation/>
+prefix dc: <http://purl.org/dc/terms/>
+prefix exon: <http://rdf.ebi.ac.uk/resource/ensembl.exon/>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix transcript: <http://rdf.ebi.ac.uk/resource/ensembl.transcript/>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix identifiers: <http://identifiers.org/>
+prefix obo: <http://purl.obolibrary.org/obo/>
+prefix sio: <http://semanticscience.org/resource/>
+prefix term: <http://rdf.ebi.ac.uk/terms/ensembl/>
+prefix protein: <http://rdf.ebi.ac.uk/resource/ensembl.protein/>
+prefix vcf: <http://rdf.ebi.ac.uk/terms/ensemblvariation/vcf/>
+PREF
+    prefixes + "\n" + query 
+    end
+
     def self.normalize_filters(query)
-      query.gsub(/FILTER(.*)\./) do |s| 
-        variable, filter, value = s.gsub(/FILTER\(/,'').gsub(/\)/,'').split
+      # Probably is better to analyze the incoming query, parsed as a SPARQL and extract from there the
+      # data we need to construct the new query
+  
+      # puts [:fun=>"normalize_filters", :query=> query].inspect
+      query = query.gsub(/FILTER.?\(.*\)/) do |s| 
+        puts s
+        variable, filter, value = s.gsub(/FILTER.?\(/,'').gsub(/\)/,'').split
         filter = "<filter_by>"
         # case filter
         # when '>'
@@ -91,8 +82,11 @@ module OTF
         # when '<='
         #   "value_let"
         # end
+        # puts "-------------------------------"
         "#{variable} #{filter} #{value} ."
       end
+      # puts [:fun=>"normalize_filters", :query_normalized=> query].inspect
+      query
     end
 
     def self.where_graph(query)
@@ -101,6 +95,7 @@ module OTF
       pre_parse = RDF::Graph.new
 
       query_normalized = normalize_filters(query)
+# puts [:fun=>"where_graph", :query=>query]
 
 # [83] pry(main)> q.operands[1].class
 # => SPARQL::Algebra::Operator::Project
@@ -108,14 +103,15 @@ module OTF
 # => SPARQL::Algebra::Operator::Filter
 # [85] pry(main)> q.operands[1].operands[1].operands[1].class
 # => RDF::Query
-      SPARQL::Grammar.parse(query_normalized).operands[1].operands[1].patterns.each do |pattern|
+# puts [:fun=>"where_graph", :query_normalized=>query_normalized] #, :parsed=>SPARQL::Grammar.parse(query_normalized)].inspect
+      patterns = get_patterns(SPARQL::Grammar.parse(query_normalized))
+      patterns.each do |pattern|
         if pattern.subject.variable?
           pattern.subject=RDF::URI(vary_diz[pattern.subject.to_s])
         end
         if pattern.object.variable?
           pattern.object=RDF::URI(vary_diz[pattern.object.to_s])
         end
-        # puts pattern.to_s
         pre_parse << pattern
       end
       pre_parse
@@ -123,6 +119,14 @@ module OTF
 
     def self.get_parameters(original_query, parameters_query)
       where_graph(original_query).query(SPARQL::Grammar.parse(parameters_query)).first.to_a
+    end
+
+    def self.get_patterns(query_parsed)
+      if query_parsed.is_a? RDF::Query
+        query_parsed.patterns
+      elsif query_parsed.respond_to? :operands
+        get_patterns(query_parsed.operands[1])
+      end
     end
 
   end #Query

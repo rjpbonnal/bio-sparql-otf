@@ -12,14 +12,41 @@
           %img{src:"bh2014-islands.png"}
       %div{class:"row"}
         %div{class:"col-md-8"}
-          %form{role:"form", method:"post",enctype:'multipart/form-data'}
-            %textarea{class:"form-control input-sm", type:"text", placeholder:"C'mon, give me your SPARQL", name:'query', rows:10}
+          %form{role:"form"}
+            %textarea{class:"form-control input-sm", type:"text", placeholder:"C'mon, give me your SPARQL", name:'query', rows:10, id:"sparql"}
             %br
-            %button{class:"btn btn-default", type:"submit", id:"submit"}
+            %button{class:"btn btn-default", type:"button", id:"submit", onclick:"exec()"}
               Spark
         %div{class:"col-md-4"}
       %div{class:"row"}
         %div{class:"col-md-12"}
+          %div{id:"chart"}
     %script{src:"/js/jquery-2.1.1.min.js"}
     %script{src:"/js/bootstrap.min.js"}
+    %script{src:"/d3/d3.min.js"}
+    %script{src:"/js/d3sparql.js"}
+    :javascript
+      function exec() {
+        var endpoint = "http://localhost:9292/sparql"
+        console.log(endpoint)
+        var sparql = d3.select("#sparql").property("value")
+        console.log(sparql)
+        d3sparql.query(endpoint, sparql, render)
+      }
+      function render(json) {
+        config = {
+          "label_x": "Variation",
+          "label_y": "Quality",
+          "var_x": "s",
+          "var_y": "quality",
+          "width":  700,  // canvas width
+          "height": 300,  // canvas height
+          "margin":  80,  // canvas margin
+        }
+        //d3sparql.htmltable(json)
+        d3sparql.barchart(json, config)
+      }
+      function toggle() {
+        d3sparql.toggle()
+      }
 

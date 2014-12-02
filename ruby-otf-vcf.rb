@@ -12,7 +12,11 @@ require 'securerandom'
 require 'lib/otf'
 
 
-file_name = ARGV[0]
+pool = OTF::FilePool.new
+
+ARGV[0].split(',').each do |file|
+  pool.add file
+end
 
 # unless File.exists?("#{file_name}.fsidx")
 #   print "Creting Index for text search..."
@@ -24,9 +28,9 @@ file_name = ARGV[0]
 
 query = File.open(ARGV[1]).read
 
-file = java.io.File.new(ARGV[0])
-fileidx = java.io.File.new("#{ARGV[0]}.tbi")
-vcf = VCFFileReader.new(file, fileidx, true)
+# file = java.io.File.new(ARGV[0])
+# fileidx = java.io.File.new("#{ARGV[0]}.tbi")
+# vcf = VCFFileReader.new(file, fileidx, true)
 
 triplets = []
 chr = nil
@@ -44,10 +48,12 @@ final_val = final.last.to_s
 repository = RDF::Graph.new
 
 if chr_val && start_val && final_val
-  vcf.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
-    OTF::VCF.new(vc, YAML.load_file(ARGV[3])).to_rdf.each do |vcf_statement|
+  pool.readers.each do |vcf_reader|
+    vcf_reader.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
+      OTF::VCF.new(vc, YAML.load_file(ARGV[3])).to_rdf.each do |vcf_statement|
         repository << vcf_statement
       # puts vcf_statement.inspect
+      end
     end
   end
 end
