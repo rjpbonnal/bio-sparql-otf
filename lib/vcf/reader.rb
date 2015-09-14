@@ -1,6 +1,8 @@
 require 'java' # requires JRuby
-require 'lib/jar/htsjdk-1.119.jar'
-require 'lib/jar/bzip2.jar'
+require 'jar/htsjdk-1.119.jar'
+require 'jar/bzip2.jar'
+
+require 'vcf/record'
 
 module VCF
   ##
@@ -13,7 +15,6 @@ module VCF
   # @see https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/variant/variantcontext/VariantContext.html
   class Reader
     java_import 'htsjdk.variant.vcf.VCFFileReader'
-    java_import 'htsjdk.variant.variantcontext.VariantContext'
 
     ##
     # @param [#to_s] pathname
@@ -55,7 +56,7 @@ module VCF
     def each_record(&block)
       return unless @reader
       @reader.iterator.each do |variant_context| # VariantContext
-        record = variant_context # TODO
+        record = Record.new(variant_context)
         block.call(record)
       end
     end
