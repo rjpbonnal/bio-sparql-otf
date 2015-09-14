@@ -2,6 +2,8 @@ require 'java' # requires JRuby
 require 'jar/htsjdk-1.119.jar'
 require 'jar/bzip2.jar'
 
+require 'rdf'
+
 module VCF
   ##
   # VCF file record.
@@ -21,6 +23,12 @@ module VCF
 
     ##
     # @return [String]
+    def id
+      @context.getID
+    end
+
+    ##
+    # @return [String]
     def chromosome
       @context.getChr
     end
@@ -28,7 +36,10 @@ module VCF
     ##
     # @return [RDF::Graph]
     def to_rdf
-      raise "not implemented yet" # TODO
+      subject = self.id.to_sym
+      RDF::Graph.new do |graph|
+        graph << [subject, RDF::DC.identifier, subject.to_s]
+      end
     end
   end # Record
 end # VCF

@@ -67,7 +67,7 @@ if $0 == __FILE__
   VCF::Reader.open('Homo_sapiens.vcf.gz') do |file|
     p file
     file.each_record do |record|
-      p record
+      p record.to_rdf
     end
   end
 end
