@@ -31,13 +31,18 @@ module VCF
 
     ##
     # @return [Enumerator]
-    def each_statement
-      super # TODO
+    def each_statement(&block)
+      @reader.each_record do |record|
+        record.to_rdf.each(&block)
+      end
     end
     alias_method :each, :each_statement
   end # Repository
 end # VCF
 
 if $0 == __FILE__
-  # TODO
+  repository = VCF::Repository.new('Homo_sapiens.vcf.gz')
+  repository.each_statement do |statement|
+    p statement
+  end
 end
