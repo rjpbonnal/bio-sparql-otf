@@ -1,18 +1,72 @@
+require 'java' # requires JRuby
+require 'lib/jar/htsjdk-1.119.jar'
+require 'lib/jar/bzip2.jar'
+
 module VCF
+  ##
+  # VCF file reader.
+  #
+  # This is a user-friendly wrapper for the HTSJDK implementation.
+  #
+  # @see https://github.com/samtools/htsjdk
+  # @see https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/variant/vcf/VCFFileReader.html
+  # @see https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/variant/variantcontext/VariantContext.html
   class Reader
+    java_import 'htsjdk.variant.vcf.VCFFileReader'
+    java_import 'htsjdk.variant.variantcontext.VariantContext'
+
+    ##
+    # @param [#to_s] pathname
     def self.open(pathname, &block)
       reader = self.new(pathname)
       block.call(reader)
     ensure
-      reader.close
+      #reader.close
     end
 
+    ##
+    # @param [#to_s] pathname
     def initialize(pathname)
-      @pathname = pathname
+      pathname = pathname.to_s
+      @vcf_file = java.io.File.new(pathname)
+      @tbi_file = java.io.File.new("#{pathname}.tbi")
+      @reader = VCFFileReader.new(@vcf_file, @tbi_file, true)
     end
 
+    ##
+    # @return [Boolean]
+    def closed?
+      @reader.nil?
+    end
+
+    ##
+    # @return [void]
     def close
-      # TODO
+      @reader.close if @reader
+    ensure
+      @reader, @vcf_file, @tbi_file = nil, nil, nil
+    end
+
+    ##
+    # @yield  [record]
+    # @yieldparam  [Record] record
+    # @yieldreturn [void]
+    # @return [void]
+    def each_record(&block)
+      return unless @reader
+      @reader.iterator.each do |variant_context| # VariantContext
+        record = variant_context # TODO
+        block.call(record)
+      end
     end
   end # Reader
 end # VCF
+
+if $0 == __FILE__
+  VCF::Reader.open('Homo_sapiens.vcf.gz') do |file|
+    p file
+    file.each_record do |record|
+      p record
+    end
+  end
+end
