@@ -104,7 +104,8 @@ PREF
 # [85] pry(main)> q.operands[1].operands[1].operands[1].class
 # => RDF::Query
 # puts [:fun=>"where_graph", :query_normalized=>query_normalized] #, :parsed=>SPARQL::Grammar.parse(query_normalized)].inspect
-      patterns = get_patterns(SPARQL::Grammar.parse(query_normalized))
+      query_algebra = SPARQL::Grammar.parse(query_normalized)
+      patterns = get_patterns(query_algebra) # FIXME: this ends up being nil
       patterns.each do |pattern|
         if pattern.subject.variable?
           pattern.subject=RDF::URI(vary_diz[pattern.subject.to_s])
