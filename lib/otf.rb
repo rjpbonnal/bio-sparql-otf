@@ -58,15 +58,15 @@ prefix term: <http://rdf.ebi.ac.uk/terms/ensembl/>
 prefix protein: <http://rdf.ebi.ac.uk/resource/ensembl.protein/>
 prefix vcf: <http://rdf.ebi.ac.uk/terms/ensemblvariation/vcf/>
 PREF
-    prefixes + "\n" + query 
+    prefixes + "\n" + query
     end
 
     def self.normalize_filters(query)
       # Probably is better to analyze the incoming query, parsed as a SPARQL and extract from there the
       # data we need to construct the new query
-  
+
       # puts [:fun=>"normalize_filters", :query=> query].inspect
-      query = query.gsub(/FILTER.?\(.*\)/) do |s| 
+      query = query.gsub(/FILTER.?\(.*\)/) do |s|
         puts s
         variable, filter, value = s.gsub(/FILTER.?\(/,'').gsub(/\)/,'').split
         filter = "<filter_by>"

@@ -36,7 +36,7 @@ module FsIndex
       @db
     end
 
-    def filename 
+    def filename
       @filename
     end
 # you can use name to override the name of the file into the database
