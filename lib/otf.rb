@@ -105,7 +105,7 @@ PREF
 # => RDF::Query
 # puts [:fun=>"where_graph", :query_normalized=>query_normalized] #, :parsed=>SPARQL::Grammar.parse(query_normalized)].inspect
       query_algebra = SPARQL::Grammar.parse(query_normalized)
-      patterns = get_patterns(query_algebra) # FIXME: this ends up being nil
+      patterns = get_patterns(query_algebra)
       patterns.each do |pattern|
         if pattern.subject.variable?
           pattern.subject=RDF::URI(vary_diz[pattern.subject.to_s])
@@ -122,14 +122,17 @@ PREF
       where_graph(original_query).query(SPARQL::Grammar.parse(parameters_query)).first.to_a
     end
 
-    def self.get_patterns(query_parsed)
-      if query_parsed.is_a? RDF::Query
-        query_parsed.patterns
-      elsif query_parsed.respond_to? :operands
-        get_patterns(query_parsed.operands[1])
+    def self.get_patterns(query_algebra)
+      if query_algebra.is_a?(RDF::Query)
+        query_algebra.patterns
+      elsif query_algebra.respond_to?(:operands)
+        # FIXME: this is not a generally viable way to proceed:
+        if operand = query_algebra.operands.last
+          get_patterns(operand)
+        else
+          raise "unable to locate BGP in the query's algebraic form"
+        end
       end
     end
-
   end #Query
-
 end #OTF
