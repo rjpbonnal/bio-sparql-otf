@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
-gem 'rdf'
-gem 'sparql'
+gem 'rdf', '=1.1.6'
+gem 'sparql','=1.1.4' 
 gem 'sinatra'
 gem 'sinatra-linkeddata'
 gem 'haml'
