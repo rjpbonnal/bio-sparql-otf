@@ -63,8 +63,8 @@ module VCF
       RDF::Graph.new do |graph|
         graph << [subject, RDF::DC.identifier, self.id]
         graph << [subject, RDF::RDFS.label, self.id]
-        @vcf.attributes.each_key do |k, v|
-          graph << [subject, VAR_BASE_URI % "vcf/attribute\##{k}", v]
+        @vcf.attributes.each do |k, v|
+          graph << [subject, RDF::URI(VAR_BASE_URI % "vcf/attribute\##{k}"), v] if v
         end
         # TODO
       end

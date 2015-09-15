@@ -12,7 +12,6 @@ module VCF
   #
   # @see https://github.com/samtools/htsjdk
   # @see https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/variant/vcf/VCFFileReader.html
-  # @see https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/variant/variantcontext/VariantContext.html
   class Reader
     java_import 'htsjdk.variant.vcf.VCFFileReader'
 
@@ -60,14 +59,43 @@ module VCF
         block.call(record)
       end
     end
+
+    ##
+    # @param  [String]  chromosome
+    # @param  [Integer] start_pos
+    # @param  [Integer] end_pos
+    # @yield  [record]
+    # @yieldparam  [Record] record
+    # @yieldreturn [void]
+    # @return [void]
+    def find_records(chromosome: nil, start_pos: nil, end_pos: nil, &block)
+      return unless @reader
+      start_pos  ||= 0
+      end_pos    ||= java.lang.Integer::MAX_VALUE
+      @reader.query(chromosome, start_pos, end_pos).each do |variant_context| # VariantContext
+        record = Record.new(variant_context)
+        block.call(record)
+      end
+    end
+
+    ##
+    # @param  [Integer] pos
+    # @return [Boolean]
+    def has_position?(pos)
+      true # TODO
+    end
   end # Reader
 end # VCF
 
 if $0 == __FILE__
   VCF::Reader.open('Homo_sapiens.vcf.gz') do |file|
     p file
-    file.each_record do |record|
-      p record.to_rdf
+    file.find_records(chromosome: "Y") do |record|
+    #file.each_record do |record|
+      p record
+      #record.to_rdf.each do |statement|
+      #  p statement
+      #end
     end
   end
 end

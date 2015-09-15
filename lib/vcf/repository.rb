@@ -9,9 +9,12 @@ module VCF
   # VCF-to-RDF repository adapter.
   class Repository < RDF::Repository
     ##
-    # @param [#to_s] pathname
-    def initialize(pathname)
-      @reader = VCF::Reader.new(pathname)
+    # @param [Array(#to_s)] pathname
+    def initialize(*pathnames)
+      @files = {}
+      pathnames.each do |pathname|
+        @files[pathname] = VCF::Reader.new(pathname)
+      end
     end
 
     ##
@@ -35,8 +38,10 @@ module VCF
     ##
     # @return [Enumerator]
     def each_statement(&block)
-      @reader.each_record do |record|
-        record.to_rdf.each(&block)
+      @files.each do |(_, file)|
+        file.each_record do |record|
+          record.to_rdf.each(&block)
+        end
       end
     end
     alias_method :each, :each_statement
