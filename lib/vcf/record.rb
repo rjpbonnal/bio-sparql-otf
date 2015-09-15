@@ -16,6 +16,8 @@ module VCF
   class Record
     java_import 'htsjdk.variant.variantcontext.VariantContext'
 
+    FALDO = RDF::Vocabulary.new("http://biohackathon.org/resource/faldo#")
+
     REF_BASE_URI = 'http://rdf.ebi.ac.uk/resource/ensembl/%s/chromosome:%s:%s'.freeze
     VAR_BASE_URI = 'http://rdf.ebi.ac.uk/terms/ensemblvariation/%s'.freeze
 
@@ -49,11 +51,22 @@ module VCF
     end
 
     ##
+    # @return [Hash{String => String}]
+    def attributes
+      @vcf.getAttributes
+    end
+
+    ##
     # @return [RDF::Graph]
     def to_rdf
       subject = RDF::URI(self.uri)
       RDF::Graph.new do |graph|
-        graph << [subject, RDF::DC.identifier, subject.to_s]
+        graph << [subject, RDF::DC.identifier, self.id]
+        graph << [subject, RDF::RDFS.label, self.id]
+        @vcf.attributes.each_key do |k, v|
+          graph << [subject, VAR_BASE_URI % "vcf/attribute\##{k}", v]
+        end
+        # TODO
       end
     end
   end # Record
