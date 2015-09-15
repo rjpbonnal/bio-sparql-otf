@@ -2,6 +2,9 @@ require 'rdf'
 require 'vcf/reader'
 
 module VCF
+  SEQ = RDF::Vocabulary.new('http://biobeat.org/rdf/seq#')
+  DB  = RDF::Vocabulary.new('http://biobeat.org/rdf/db#')
+
   ##
   # VCF-to-RDF repository adapter.
   class Repository < RDF::Repository
@@ -37,12 +40,35 @@ module VCF
       end
     end
     alias_method :each, :each_statement
+
+  protected
+
+    def query_execute(query, options = {}, &block)
+      # For now, we let RDF.rb's built-in `RDF::Query#execute` handle BGP
+      # query execution by breaking down the query into its constituent
+      # triple patterns and invoking `RDF::Query::Pattern#execute` on each
+      # pattern.
+      super
+    end
+
+    def query_pattern(pattern, options = {}, &block)
+      case predicate = pattern.predicate
+        when RDF::URI
+          case predicate
+            when SEQ.chr then super # TODO
+            when SEQ.pos then super # TODO
+            else super # full scan for other predicates
+          end
+        else super # full scan for generic triple patterns
+      end
+    end
   end # Repository
 end # VCF
 
 if $0 == __FILE__
-  repository = VCF::Repository.new('Homo_sapiens.vcf.gz')
-  repository.each_statement do |statement|
-    p statement
+  require 'sparql'
+  repository = VCF::Repository.new('docker/data.vcf.gz')
+  SPARQL.parse("SELECT * WHERE { ?s ?p ?o }").execute(repository) do |solution|
+    p solution
   end
 end
