@@ -2,6 +2,7 @@ require 'java' # requires JRuby
 require 'jar/htsjdk-1.119.jar'
 require 'jar/bzip2.jar'
 
+require 'digest/md5'
 require 'rdf'
 
 module VCF
@@ -15,28 +16,42 @@ module VCF
   class Record
     java_import 'htsjdk.variant.variantcontext.VariantContext'
 
+    REF_BASE_URI = 'http://rdf.ebi.ac.uk/resource/ensembl/%s/chromosome:%s:%s'.freeze
+    VAR_BASE_URI = 'http://rdf.ebi.ac.uk/terms/ensemblvariation/%s'.freeze
+
     ##
     # @param [VariantContext] variant_context
     def initialize(variant_context)
-      @context = variant_context
+      @vcf = variant_context
     end
 
     ##
     # @return [String]
     def id
-      @context.getID
+      @id ||= case (id = @vcf.getID)
+        when '.'
+          label = "%s:%s:%s-%s" % ['', @vcf.getChr, @vcf.getStart, @vcf.getEnd] # TODO: species
+          ::Digest::MD5.hexdigest(label)
+        else id
+      end
+    end
+
+    ##
+    # @return [String]
+    def uri
+      @uri ||= VAR_BASE_URI % self.id
     end
 
     ##
     # @return [String]
     def chromosome
-      @context.getChr
+      @vcf.getChr
     end
 
     ##
     # @return [RDF::Graph]
     def to_rdf
-      subject = self.id.to_sym
+      subject = RDF::URI(self.uri)
       RDF::Graph.new do |graph|
         graph << [subject, RDF::DC.identifier, subject.to_s]
       end
