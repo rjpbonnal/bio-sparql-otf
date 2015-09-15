@@ -36,7 +36,7 @@ module OTF
           
           vcf_rdf << [URI(varURI), DC.identifier ,@vcf.getID]
 
-          vcf_rdf << [URI(varURI),RDFS.label),@vcf.getID]
+          vcf_rdf << [URI(varURI),RDFS.label,@vcf.getID]
       end
       vcf_rdf << [URI(refBaseURI),DC.identifier,"#{@vcf.getChr}"]
       faldoRegion = URI(refBaseURI+":#{@vcf.getStart}-#{@vcf.getEnd}:1")
