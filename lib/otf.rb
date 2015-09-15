@@ -58,15 +58,15 @@ prefix term: <http://rdf.ebi.ac.uk/terms/ensembl/>
 prefix protein: <http://rdf.ebi.ac.uk/resource/ensembl.protein/>
 prefix vcf: <http://rdf.ebi.ac.uk/terms/ensemblvariation/vcf/>
 PREF
-    prefixes + "\n" + query 
+    prefixes + "\n" + query
     end
 
     def self.normalize_filters(query)
       # Probably is better to analyze the incoming query, parsed as a SPARQL and extract from there the
       # data we need to construct the new query
-  
+
       # puts [:fun=>"normalize_filters", :query=> query].inspect
-      query = query.gsub(/FILTER.?\(.*\)/) do |s| 
+      query = query.gsub(/FILTER.?\(.*\)/) do |s|
         puts s
         variable, filter, value = s.gsub(/FILTER.?\(/,'').gsub(/\)/,'').split
         filter = "<filter_by>"
@@ -104,7 +104,8 @@ PREF
 # [85] pry(main)> q.operands[1].operands[1].operands[1].class
 # => RDF::Query
 # puts [:fun=>"where_graph", :query_normalized=>query_normalized] #, :parsed=>SPARQL::Grammar.parse(query_normalized)].inspect
-      patterns = get_patterns(SPARQL::Grammar.parse(query_normalized))
+      query_algebra = SPARQL::Grammar.parse(query_normalized)
+      patterns = get_patterns(query_algebra)
       patterns.each do |pattern|
         if pattern.subject.variable?
           pattern.subject=RDF::URI(vary_diz[pattern.subject.to_s])
@@ -121,14 +122,17 @@ PREF
       where_graph(original_query).query(SPARQL::Grammar.parse(parameters_query)).first.to_a
     end
 
-    def self.get_patterns(query_parsed)
-      if query_parsed.is_a? RDF::Query
-        query_parsed.patterns
-      elsif query_parsed.respond_to? :operands
-        get_patterns(query_parsed.operands[1])
+    def self.get_patterns(query_algebra)
+      if query_algebra.is_a?(RDF::Query)
+        query_algebra.patterns
+      elsif query_algebra.respond_to?(:operands)
+        # FIXME: this is not a generally viable way to proceed:
+        if operand = query_algebra.operands.last
+          get_patterns(operand)
+        else
+          raise "unable to locate BGP in the query's algebraic form"
+        end
       end
     end
-
   end #Query
-
 end #OTF

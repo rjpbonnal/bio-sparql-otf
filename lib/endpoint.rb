@@ -95,8 +95,6 @@ get "/sparql" do
     repository = RDF::Graph.new
 
     if chr_val && start_val && final_val
-      
-
       @@pool.readers.each do |vcf_reader|
         vcf_reader.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
           OTF::VCF.new(vc, @@config).to_rdf.each do |vcf_statement|
@@ -104,7 +102,6 @@ get "/sparql" do
           end
         end
       end
-
     end
     # cross_origin
     content_type 'application/sparql-results+json'
@@ -133,8 +130,6 @@ post "/query" do
     repository = RDF::Graph.new
 
     if chr_val && start_val && final_val
-      
-
       @@pool.readers.each do |vcf_reader|
         vcf_reader.query(chr_val, start_val.to_i, final_val.to_i).each do |vc|
           OTF::VCF.new(vc, @@config).to_rdf.each do |vcf_statement|
@@ -142,7 +137,6 @@ post "/query" do
           end
         end
       end
-
     end
 
 
