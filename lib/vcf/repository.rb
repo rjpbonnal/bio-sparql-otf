@@ -1,5 +1,5 @@
 require 'rdf'
-require 'vcf/reader'
+require 'rdf/vcf/reader'
 
 module VCF
   SEQ = RDF::Vocabulary.new('http://biobeat.org/rdf/seq#')
@@ -13,7 +13,7 @@ module VCF
     def initialize(*pathnames)
       @files = {}
       pathnames.each do |pathname|
-        @files[pathname] = VCF::Reader.new(pathname)
+        @files[pathname] = RDF::VCF::Reader.new(pathname)
       end
     end
 
