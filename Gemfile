@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
+gem 'rdf-vcf', :git => 'https://github.com/ruby-rdf/rdf-vcf.git'
 gem 'rdf', '=1.1.6'
-gem 'sparql','=1.1.4' 
+gem 'sparql','=1.1.4'
 gem 'sinatra'
 gem 'sinatra-linkeddata'
 gem 'haml'
